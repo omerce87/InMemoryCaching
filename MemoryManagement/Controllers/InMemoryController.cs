@@ -17,6 +17,7 @@ namespace MemoryManagement.Controllers
 
         public IActionResult Index()
         {
+            //Set Current Time in currentTime string On IndexPage
             _memorycache.Set<string>("currentTime", DateTime.Now.ToString());
 
             return View();
@@ -24,8 +25,17 @@ namespace MemoryManagement.Controllers
 
         public IActionResult GetTime()
         {
+            //in-Memory Control with getorcreate method.
+            _memorycache.GetOrCreate<string>("currentTime", newcache => {
+                newcache.SetPriority(CacheItemPriority.High);
+                newcache.SetSlidingExpiration(TimeSpan.FromMinutes(20));
+                return DateTime.Now.ToString(); 
+            });
+
+            //try to get value and writing in a string with out parameters 
             _memorycache.TryGetValue<string>("currentTime", out string mycurrenttime);
 
+            //We dont like ViewBagS :)
             ViewBag.currenttime = mycurrenttime;
 
             return View();
