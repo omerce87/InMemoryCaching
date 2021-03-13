@@ -26,13 +26,18 @@ namespace MemoryManagement.Controllers
             if (_memorycache.TryGetValue<string>("currentTime", out string mycurrenttime)) {
                 MemoryCacheEntryOptions option = new MemoryCacheEntryOptions();
                 //AbsoluteExpression... START
-                option.AbsoluteExpiration = DateTime.Now.AddMinutes(20);
+                option.AbsoluteExpiration = DateTime.Now.AddSeconds(5);
                 //AbsoluteExpression... FINISH
 
                 //SlidingExpression.... START
-                option.SlidingExpiration = TimeSpan.FromSeconds(30);
+                option.SlidingExpiration = TimeSpan.FromSeconds(5);
                 //SlidingExpression.... FINISH
-                
+
+                option.RegisterPostEvictionCallback((key,val,reason,state) =>
+                {
+                    _memorycache.Set("removecachereason", $"{key}-{val} : {reason}");
+                });
+
                 _memorycache.Set<string>("currentTime", DateTime.Now.ToString(), option);
             }
 
@@ -42,7 +47,7 @@ namespace MemoryManagement.Controllers
         public IActionResult GetTime()
         {
             
-            //in-Memory Control with getorcreate method.
+            //in-Memory Control with GetOrCreate method.
             _memorycache.GetOrCreate<string>("currentTime", newcache => {
                 newcache.SetPriority(CacheItemPriority.High);
                 newcache.SetSlidingExpiration(TimeSpan.FromMinutes(20));
@@ -51,9 +56,11 @@ namespace MemoryManagement.Controllers
 
             //try to get value and writing in a string with out parameters 
             _memorycache.TryGetValue<string>("currentTime", out string mycurrenttime);
+            _memorycache.TryGetValue<string>("removecachereason", out string removecachereason);
 
             //We dont like ViewBagS :)
             ViewBag.currenttime = mycurrenttime;
+            ViewBag.removecachereason = removecachereason;
 
             return View();
         }
