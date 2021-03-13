@@ -20,11 +20,28 @@ namespace MemoryManagement.Controllers
             //Set Current Time in currentTime string On IndexPage
             _memorycache.Set<string>("currentTime", DateTime.Now.ToString());
 
+            //AbsoluteExpression : Cache LifeCycle
+            //SlidingExpression : With regenerate the cache every time it is used
+
+            if (_memorycache.TryGetValue<string>("currentTime", out string mycurrenttime)) {
+                MemoryCacheEntryOptions option = new MemoryCacheEntryOptions();
+                //AbsoluteExpression... START
+                option.AbsoluteExpiration = DateTime.Now.AddMinutes(20);
+                //AbsoluteExpression... FINISH
+
+                //SlidingExpression.... START
+                option.SlidingExpiration = TimeSpan.FromSeconds(30);
+                //SlidingExpression.... FINISH
+                
+                _memorycache.Set<string>("currentTime", DateTime.Now.ToString(), option);
+            }
+
             return View();
         }
 
         public IActionResult GetTime()
         {
+            
             //in-Memory Control with getorcreate method.
             _memorycache.GetOrCreate<string>("currentTime", newcache => {
                 newcache.SetPriority(CacheItemPriority.High);
